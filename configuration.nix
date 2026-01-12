@@ -29,13 +29,7 @@
   
   systemd.tmpfiles.rules = [ "L+ /var/lib/qemu/firmware - - - - ${pkgs.qemu}/share/qemu/firmware" ];
 
-  networking = {
-    networkmanager.enable = true;
-    wireless.iwd = {
-      enable = true;
-      settings.General.EnableNetworkConfiguration = true;
-    };
-  };
+  networking.networkmanager.enable = true;
 
   # Set your time zone.
   time.timeZone = "US/Pacific";
