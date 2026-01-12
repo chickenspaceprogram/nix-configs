@@ -2,7 +2,6 @@
 # your system. Help is available in the configuration.nix(5) man page, on
 # https://search.nixos.org/options and in the NixOS manual (`nixos-help`).
 
-
 { config, lib, pkgs, ... }:
 
 {
@@ -18,6 +17,7 @@
   boot.binfmt.emulatedSystems = [
     "armv7l-linux"
     "i386-linux"
+    "x86_64-linux"
   ];
 
   documentation.dev.enable = true;
@@ -28,10 +28,14 @@
   } ];
   
   systemd.tmpfiles.rules = [ "L+ /var/lib/qemu/firmware - - - - ${pkgs.qemu}/share/qemu/firmware" ];
-  # networking.hostName = "nixos"; # Define your hostname.
 
-  # Configure network connections interactively with nmcli or nmtui.
-  networking.networkmanager.enable = true;
+  networking = {
+    networkmanager.enable = true;
+    wireless.iwd = {
+      enable = true;
+      settings.General.EnableNetworkConfiguration = true;
+    };
+  };
 
   # Set your time zone.
   time.timeZone = "US/Pacific";
@@ -83,11 +87,6 @@
   };
 
   virtualisation.libvirtd.enable = true;
-  programs.virt-manager.enable = true;
-
-  # Configure keymap in X11
-  # services.xserver.xkb.layout = "us";
-  # services.xserver.xkb.options = "eurosign:e,caps:escape";
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.athena = {
@@ -102,8 +101,16 @@
   hardware.bluetooth.enable = true;
 
   programs = {
+    mtr.enable = true;
+    gnupg.agent = {
+      enable = true;
+      enableSSHSupport = true;
+    };
+    virt-manager.enable = true;
     zsh = {
       enable = true;
+      enableCompletion = true;
+      syntaxHighlighting.enable = true;
       ohMyZsh.enable = true;
       promptInit = ''
         source ~/.oh-my-zsh/themes/transgender.zsh-theme
@@ -148,19 +155,17 @@
     	enable = true;
 	lfs.enable = true;
     };
+    vim = {
+      enable = true;
+      defaultEditor = true;
+    };
   };
 
 
-  networking.wireless.iwd = {
-    enable = true;
-    settings.General.EnableNetworkConfiguration = true;
-  };
-  
 
   # List packages installed in system profile.
   # You can use https://search.nixos.org/ to find more packages (and options).
   environment.systemPackages = with pkgs; [
-    vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
     wget
     kdePackages.discover
     kdePackages.kcalc
@@ -176,23 +181,15 @@
     vlc
     wayland-utils
     wl-clipboard
-    firefox
-    git
-    git-lfs
     cmakeMinimal
-    zsh
     alacritty
     gcc
     gnumake
     gimp
     bc
     python3
-    oh-my-zsh
-    zsh-completions
-    zsh-syntax-highlighting
     hyfetch
     fastfetch
-    virt-manager
     qemu
     libvirt
     keychain
@@ -216,34 +213,8 @@
     gdb
     yt-dlp
     valgrind
-    #pkgsCross.armv7l-hf-multiplatform.gcc
-
-
-    curlFull
-
   ];
   
-  # Some programs need SUID wrappers, can be configured further or are
-  # started in user sessions.
-  programs.mtr.enable = true;
-  programs.gnupg.agent = {
-    enable = true;
-    enableSSHSupport = true;
-  };
-
-
-
-  # List services that you want to enable:
-
-  # Enable the OpenSSH daemon.
-  # services.openssh.enable = true;
-
-  # Open ports in the firewall.
-  # networking.firewall.allowedTCPPorts = [ ... ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
-  # Or disable the firewall altogether.
-  # networking.firewall.enable = false;
-
   # Copy the NixOS configuration file and link it from the resulting system
   # (/run/current-system/configuration.nix). This is useful in case you
   # accidentally delete configuration.nix.
