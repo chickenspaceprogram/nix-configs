@@ -15,17 +15,26 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = false;
   boot.binfmt.emulatedSystems = [
-    "armv7l-linux"
-    "i386-linux"
-    "x86_64-linux"
+#    "armv7l-linux"
+#    "i386-linux"
+#    "x86_64-linux"
   ];
 
   documentation.dev.enable = true;
+  nix = {
+    settings.auto-optimise-store = true;
+    gc = {
+      automatic = true;
+      persistent = true;
+      dates = "weekly";
+      options = "--delete-older-than +5";
+    };
+  };
 
-  swapDevices = [ {
-    device = "/var/lib/swapfile";
-    size = 16*1024;
-  } ];
+#  swapDevices = [ {
+#    device = "/var/lib/swapfile";
+#    size = 16*1024;
+#  } ];
   
   systemd.tmpfiles.rules = [ "L+ /var/lib/qemu/firmware - - - - ${pkgs.qemu}/share/qemu/firmware" ];
 
