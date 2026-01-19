@@ -4,11 +4,15 @@
 
 { config, lib, pkgs, ... }:
 
+let
+  home-manager = builtins.fetchTarball https://github.com/nix-community/home-manager/archive/release-25.11.tar.gz;
+in
 {
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
       ./apple-silicon-support
+      (import "${home-manager}/nixos")
     ];
 
   # Use the systemd-boot EFI boot loader.
@@ -95,90 +99,131 @@
 
   programs = {
     mtr.enable = true;
-    gnupg.agent = {
-      enable = true;
-      enableSSHSupport = true;
-    };
-    virt-manager.enable = true;
-    zsh = {
-      enable = true;
-      enableCompletion = true;
-      syntaxHighlighting.enable = true;
-      ohMyZsh.enable = true;
-      promptInit = ''
-        source ~/.oh-my-zsh/themes/transgender.zsh-theme
-      '';
-    };
+    zsh.enable = true;
 
     firefox = {
       enable = true;
       languagePacks = [ "en-US" ];
-
-      /* ---- POLICIES ---- */
-      # Check about:policies#documentation for options.
-      policies = {
-        DisableTelemetry = true;
-        DisableFirefoxStudies = true;
-        EnableTrackingProtection = {
-          Value= true;
-          Locked = true;
-          Cryptomining = true;
-          Fingerprinting = true;
-        };
-        DisablePocket = true;
-        DisableFirefoxAccounts = true;
-        DisableAccounts = true;
-
-        /* ---- EXTENSIONS ---- */
-        # Check about:support for extension/add-on ID strings.
-        # Valid strings for installation_mode are "allowed", "blocked",
-        # "force_installed" and "normal_installed".
-        ExtensionSettings = {
-          "*".installation_mode = "blocked"; # blocks all addons except the ones specified below
-          # uBlock Origin:
-          "uBlock0@raymondhill.net" = {
-            install_url = "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi";
-            installation_mode = "force_installed";
-          };
-        };
-  
-      };
-    };
-    git = {
-    	enable = true;
-	lfs.enable = true;
     };
     vim = {
       enable = true;
       defaultEditor = true;
     };
+    gnupg.agent = {
+      enable = true;
+      enableSSHSupport = true;
+    };
+    virt-manager.enable = true;
   };
-
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.athena = {
-    shell = pkgs.zsh;
-    useDefaultShell = true;
     isNormalUser = true;
     extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
-    packages = with pkgs; [
+    shell = pkgs.zsh;
+    useDefaultShell = true;
+  };
+  home-manager.users.athena = { pkgs, ... }: {
+    programs = {
+      alacritty = {
+        enable = true;
+        settings = {
+	  font.size = 14;
+	  window.dimensions = {
+	    columns = 90;
+	    lines = 30;
+	  };
+        };
+      };
+      git = {
+        enable = true;
+	lfs.enable = true;
+	settings.user = {
+	  name = "Athena Boose";
+	  email = "pestpestthechicken@yahoo.com";
+	};
+      };
+      zsh = {
+        enable = true;
+        enableCompletion = true;
+        syntaxHighlighting.enable = true;
+        oh-my-zsh.enable = true;
+	history = {
+	  size = 10000;
+	  path = "${config.users.users.athena.home}/.zsh_history";
+	};
+        initContent = ''
+          source ${config.users.users.athena.home}/.oh-my-zsh/themes/transgender.zsh-theme
+        '';
+      };
+      firefox = {
+        enable = true;
+        languagePacks = [ "en-US" ];
+  
+        /* ---- POLICIES ---- */
+        # Check about:policies#documentation for options.
+        policies = {
+          DisableTelemetry = true;
+          DisableFirefoxStudies = true;
+          EnableTrackingProtection = {
+            Value= true;
+            Locked = true;
+            Cryptomining = true;
+            Fingerprinting = true;
+          };
+          DisablePocket = true;
+          DisableFirefoxAccounts = true;
+          DisableAccounts = true;
+
+          /* ---- EXTENSIONS ---- */
+          # Check about:support for extension/add-on ID strings.
+          # Valid strings for installation_mode are "allowed", "blocked",
+          # "force_installed" and "normal_installed".
+          ExtensionSettings = {
+            "*".installation_mode = "blocked"; # blocks all addons except the ones specified below
+            # uBlock Origin:
+            "uBlock0@raymondhill.net" = {
+              install_url = "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi";
+              installation_mode = "force_installed";
+            };
+          };
+  
+        };
+      };
+      yt-dlp.enable = true;
+      fastfetch.enable = true;
+      hyfetch.enable = true;
+      gcc.enable = true;
+    };
+    home.packages = with pkgs; [
       tree
       sl
       cowsay
       gimp
       qemu
-      libvirt
       vlc
       objconv
-      yt-dlp
-      hyfetch
-      fastfetch
       wget
       cmakeMinimal
-      gcc
       gnumake
       ctags
-      texlive.combined.scheme-full
+      (texlive.combine {
+        inherit (texlive)
+          scheme-small
+	  latexmk
+	  simplekv
+	  xstring
+	  cancel
+	  enumitem
+	  geometry
+	  commath
+	  systeme
+	  mathtools
+	  gensymb
+	  mhchem
+	  pgfplots
+          ;
+      })
       thunderbird
       octaveFull
       cargo
@@ -201,6 +246,7 @@
       pandoc
       xournalpp
     ];
+    home.stateVersion = "25.11"; # DO NOT UPDATE!
   };
 
   # List packages installed in system profile.
@@ -208,9 +254,9 @@
   environment.systemPackages = with pkgs; [
     kdePackages.ksystemlog
     kdePackages.sddm-kcm
+    alacritty
     wayland-utils
     wl-clipboard
-    alacritty
     keychain
     dnsmasq
     zathura
@@ -218,6 +264,19 @@
     htop
     man-pages
     man-pages-posix
+    (vim-full.customize {
+	vimrcConfig.customRC = ''
+	  set number
+	  set relativenumber
+	  set ruler
+	  set autoindent
+	  set showcmd
+	  set hlsearch
+
+	  syntax on
+	  filetype on
+	'';
+    })
   ];
   
   # Copy the NixOS configuration file and link it from the resulting system
