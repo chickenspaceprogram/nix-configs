@@ -33,7 +33,7 @@
 
 #  swapDevices = [ {
 #    device = "/var/lib/swapfile";
-#    size = 16*1024;
+#    size = 1024; #16*1024;
 #  } ];
   
   systemd.tmpfiles.rules = [ "L+ /var/lib/qemu/firmware - - - - ${pkgs.qemu}/share/qemu/firmware" ];
@@ -91,16 +91,6 @@
 
   virtualisation.libvirtd.enable = true;
 
-  # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.athena = {
-    shell = pkgs.zsh;
-    useDefaultShell = true;
-    isNormalUser = true;
-    extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
-    packages = with pkgs; [
-      tree
-    ];
-  };
   hardware.bluetooth.enable = true;
 
   programs = {
@@ -165,57 +155,69 @@
   };
 
 
+  # Define a user account. Don't forget to set a password with ‘passwd’.
+  users.users.athena = {
+    shell = pkgs.zsh;
+    useDefaultShell = true;
+    isNormalUser = true;
+    extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
+    packages = with pkgs; [
+      tree
+      sl
+      cowsay
+      gimp
+      qemu
+      libvirt
+      vlc
+      objconv
+      yt-dlp
+      hyfetch
+      fastfetch
+      wget
+      cmakeMinimal
+      gcc
+      gnumake
+      ctags
+      texlive.combined.scheme-full
+      thunderbird
+      octaveFull
+      cargo
+      rustc
+      aspell
+      libreoffice-qt
+      hunspell
+      hunspellDicts.en_US
+      clang-tools
+      kdiff3
+      hardinfo2
+      python3
+      gdb
+      valgrind
+      bc
+      kdePackages.kclock
+      kdePackages.kcolorchooser
+      kdePackages.kolourpaint
+      kdePackages.filelight
+      pandoc
+      xournalpp
+    ];
+  };
 
   # List packages installed in system profile.
   # You can use https://search.nixos.org/ to find more packages (and options).
   environment.systemPackages = with pkgs; [
-    wget
-    kdePackages.discover
-    kdePackages.kcalc
-    kdePackages.kcharselect
-    kdePackages.kclock
-    kdePackages.kcolorchooser
-    kdePackages.kolourpaint
     kdePackages.ksystemlog
     kdePackages.sddm-kcm
-    kdePackages.filelight
-    kdiff3
-    hardinfo2
-    vlc
     wayland-utils
     wl-clipboard
-    cmakeMinimal
     alacritty
-    gcc
-    gnumake
-    gimp
-    bc
-    python3
-    hyfetch
-    fastfetch
-    qemu
-    libvirt
     keychain
     dnsmasq
-    texlive.combined.scheme-full
-    thunderbird
-    octaveFull
-    cargo
-    rustc
     zathura
-    clang-tools
-    aspell
-    libreoffice-qt
-    hunspell
-    hunspellDicts.en_US
     texinfo
     htop
     man-pages
     man-pages-posix
-    objconv
-    gdb
-    yt-dlp
-    valgrind
   ];
   
   # Copy the NixOS configuration file and link it from the resulting system
