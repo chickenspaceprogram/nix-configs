@@ -187,13 +187,13 @@ in
               installation_mode = "force_installed";
             };
           };
-  
         };
       };
       yt-dlp.enable = true;
       fastfetch.enable = true;
       hyfetch.enable = true;
       gcc.enable = true;
+      pandoc.enable = true;
     };
     home.packages = with pkgs; [
       tree
@@ -243,7 +243,6 @@ in
       kdePackages.kcolorchooser
       kdePackages.kolourpaint
       kdePackages.filelight
-      pandoc
       xournalpp
     ];
     home.stateVersion = "25.11"; # DO NOT UPDATE!
