@@ -8,12 +8,11 @@ let
   home-manager = builtins.fetchTarball https://github.com/nix-community/home-manager/archive/release-25.11.tar.gz;
 in
 {
-  imports =
-    [ # Include the results of the hardware scan.
-      ./hardware-configuration.nix
-      ./apple-silicon-support
-      (import "${home-manager}/nixos")
-    ];
+  imports = [ # Include the results of the hardware scan.
+    ./hardware-configuration.nix
+    ./apple-silicon-support
+    (import "${home-manager}/nixos")
+  ];
 
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
@@ -35,10 +34,10 @@ in
     };
   };
 
-#  swapDevices = [ {
-#    device = "/var/lib/swapfile";
-#    size = 1024; #16*1024;
-#  } ];
+  swapDevices = [ {
+    device = "/var/lib/swapfile";
+    size = 16*1024;
+  } ];
   
   systemd.tmpfiles.rules = [ "L+ /var/lib/qemu/firmware - - - - ${pkgs.qemu}/share/qemu/firmware" ];
 
@@ -98,6 +97,7 @@ in
   hardware.bluetooth.enable = true;
 
   programs = {
+    niri.enable = true;
     mtr.enable = true;
     zsh.enable = true;
 
@@ -119,11 +119,39 @@ in
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.athena = {
     isNormalUser = true;
-    extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
+    extraGroups = [
+      "wheel"
+      "libvirtd"
+      "networkmanager"
+    ];
     shell = pkgs.zsh;
     useDefaultShell = true;
   };
   home-manager.users.athena = { pkgs, ... }: {
+    xdg.mimeApps = {
+      enable = true;
+      defaultApplications = {
+        "text/html" = "firefox.desktop";
+        "x-scheme-handler/http" = "firefox.desktop";
+        "x-scheme-handler/https" = "firefox.desktop";
+        "x-scheme-handler/about" = "firefox.desktop";
+        "x-scheme-handler/unknown" = "firefox.desktop";
+	"x-scheme-handler/mailto" = "thunderbird.desktop";
+	"x-scheme-handler/mid" = "thunderbird.desktop";
+	"message/rfc822" = "thunderbird.desktop";
+	"application/pdf" = "okular.desktop";
+	"image/jpeg" = "gwenview.desktop";
+	"image/jpg" = "gwenview.desktop";
+	"image/png" = "gwenview.desktop";
+	"image/tiff" = "gwenview.desktop";
+	"image/svg+xml" = "gwenview.desktop";
+	"image/webp" = "gwenview.desktop";
+	"image/apng" = "gwenview.desktop";
+	"image/avif" = "gwenview.desktop";
+	"image/bmp" = "gwenview.desktop";
+	"image/gif" = "gwenview.desktop";
+      };
+    };
     programs = {
       alacritty = {
         enable = true;
@@ -187,13 +215,15 @@ in
               installation_mode = "force_installed";
             };
           };
+  
         };
       };
       yt-dlp.enable = true;
       fastfetch.enable = true;
       hyfetch.enable = true;
       gcc.enable = true;
-      pandoc.enable = true;
+      fuzzel.enable = true;
+      waybar.enable = true;
     };
     home.packages = with pkgs; [
       tree
@@ -207,6 +237,8 @@ in
       cmakeMinimal
       gnumake
       ctags
+      pavucontrol
+      imagemagick
       (texlive.combine {
         inherit (texlive)
           scheme-small
@@ -224,7 +256,7 @@ in
 	  pgfplots
           ;
       })
-      thunderbird
+      #thunderbird
       octaveFull
       cargo
       rustc
@@ -243,6 +275,10 @@ in
       kdePackages.kcolorchooser
       kdePackages.kolourpaint
       kdePackages.filelight
+      kdePackages.okular
+      kdePackages.gwenview
+      blueman
+      pandoc
       xournalpp
     ];
     home.stateVersion = "25.11"; # DO NOT UPDATE!
@@ -281,7 +317,10 @@ in
   # Copy the NixOS configuration file and link it from the resulting system
   # (/run/current-system/configuration.nix). This is useful in case you
   # accidentally delete configuration.nix.
-  system.copySystemConfiguration = true;
+  system = {
+    copySystemConfiguration = true;
+    autoUpgrade.enable = true;
+  };
 
   # This option defines the first version of NixOS you have installed on this particular machine,
   # and is used to maintain compatibility with application data (e.g. databases) created on older NixOS versions.
