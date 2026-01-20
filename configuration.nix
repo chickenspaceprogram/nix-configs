@@ -4,12 +4,15 @@
 
 { config, lib, pkgs, ... }:
 
+let
+  home-manager = builtins.fetchTarball https://github.com/nix-community/home-manager/archive/release-25.11.tar.gz;
+in
 {
-  imports =
-    [ # Include the results of the hardware scan.
-      ./hardware-configuration.nix
-      ./apple-silicon-support
-    ];
+  imports = [ # Include the results of the hardware scan.
+    ./hardware-configuration.nix
+    ./apple-silicon-support
+    (import "${home-manager}/nixos")
+  ];
 
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
@@ -31,10 +34,10 @@
     };
   };
 
-#  swapDevices = [ {
-#    device = "/var/lib/swapfile";
-#    size = 1024; #16*1024;
-#  } ];
+  swapDevices = [ {
+    device = "/var/lib/swapfile";
+    size = 16*1024;
+  } ];
   
   systemd.tmpfiles.rules = [ "L+ /var/lib/qemu/firmware - - - - ${pkgs.qemu}/share/qemu/firmware" ];
 
@@ -94,92 +97,166 @@
   hardware.bluetooth.enable = true;
 
   programs = {
+    niri.enable = true;
     mtr.enable = true;
-    gnupg.agent = {
-      enable = true;
-      enableSSHSupport = true;
-    };
-    virt-manager.enable = true;
-    zsh = {
-      enable = true;
-      enableCompletion = true;
-      syntaxHighlighting.enable = true;
-      ohMyZsh.enable = true;
-      promptInit = ''
-        source ~/.oh-my-zsh/themes/transgender.zsh-theme
-      '';
-    };
+    zsh.enable = true;
 
     firefox = {
       enable = true;
       languagePacks = [ "en-US" ];
-
-      /* ---- POLICIES ---- */
-      # Check about:policies#documentation for options.
-      policies = {
-        DisableTelemetry = true;
-        DisableFirefoxStudies = true;
-        EnableTrackingProtection = {
-          Value= true;
-          Locked = true;
-          Cryptomining = true;
-          Fingerprinting = true;
-        };
-        DisablePocket = true;
-        DisableFirefoxAccounts = true;
-        DisableAccounts = true;
-
-        /* ---- EXTENSIONS ---- */
-        # Check about:support for extension/add-on ID strings.
-        # Valid strings for installation_mode are "allowed", "blocked",
-        # "force_installed" and "normal_installed".
-        ExtensionSettings = {
-          "*".installation_mode = "blocked"; # blocks all addons except the ones specified below
-          # uBlock Origin:
-          "uBlock0@raymondhill.net" = {
-            install_url = "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi";
-            installation_mode = "force_installed";
-          };
-        };
-  
-      };
-    };
-    git = {
-    	enable = true;
-	lfs.enable = true;
     };
     vim = {
       enable = true;
       defaultEditor = true;
     };
+    gnupg.agent = {
+      enable = true;
+      enableSSHSupport = true;
+    };
+    virt-manager.enable = true;
   };
-
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.athena = {
+    isNormalUser = true;
+    extraGroups = [
+      "wheel"
+      "libvirtd"
+      "networkmanager"
+    ];
     shell = pkgs.zsh;
     useDefaultShell = true;
-    isNormalUser = true;
-    extraGroups = [ "wheel" ]; # Enable ‘sudo’ for the user.
-    packages = with pkgs; [
+  };
+  home-manager.users.athena = { pkgs, ... }: {
+    xdg.mimeApps = {
+      enable = true;
+      defaultApplications = {
+        "text/html" = "firefox.desktop";
+        "x-scheme-handler/http" = "firefox.desktop";
+        "x-scheme-handler/https" = "firefox.desktop";
+        "x-scheme-handler/about" = "firefox.desktop";
+        "x-scheme-handler/unknown" = "firefox.desktop";
+	"x-scheme-handler/mailto" = "thunderbird.desktop";
+	"x-scheme-handler/mid" = "thunderbird.desktop";
+	"message/rfc822" = "thunderbird.desktop";
+	"application/pdf" = "okular.desktop";
+	"image/jpeg" = "gwenview.desktop";
+	"image/jpg" = "gwenview.desktop";
+	"image/png" = "gwenview.desktop";
+	"image/tiff" = "gwenview.desktop";
+	"image/svg+xml" = "gwenview.desktop";
+	"image/webp" = "gwenview.desktop";
+	"image/apng" = "gwenview.desktop";
+	"image/avif" = "gwenview.desktop";
+	"image/bmp" = "gwenview.desktop";
+	"image/gif" = "gwenview.desktop";
+      };
+    };
+    programs = {
+      alacritty = {
+        enable = true;
+        settings = {
+	  font.size = 14;
+	  window.dimensions = {
+	    columns = 90;
+	    lines = 30;
+	  };
+        };
+      };
+      git = {
+        enable = true;
+	lfs.enable = true;
+	settings.user = {
+	  name = "Athena Boose";
+	  email = "pestpestthechicken@yahoo.com";
+	};
+      };
+      zsh = {
+        enable = true;
+        enableCompletion = true;
+        syntaxHighlighting.enable = true;
+        oh-my-zsh.enable = true;
+	history = {
+	  size = 10000;
+	  path = "${config.users.users.athena.home}/.zsh_history";
+	};
+        initContent = ''
+          source ${config.users.users.athena.home}/.oh-my-zsh/themes/transgender.zsh-theme
+        '';
+      };
+      firefox = {
+        enable = true;
+        languagePacks = [ "en-US" ];
+  
+        /* ---- POLICIES ---- */
+        # Check about:policies#documentation for options.
+        policies = {
+          DisableTelemetry = true;
+          DisableFirefoxStudies = true;
+          EnableTrackingProtection = {
+            Value= true;
+            Locked = true;
+            Cryptomining = true;
+            Fingerprinting = true;
+          };
+          DisablePocket = true;
+          DisableFirefoxAccounts = true;
+          DisableAccounts = true;
+
+          /* ---- EXTENSIONS ---- */
+          # Check about:support for extension/add-on ID strings.
+          # Valid strings for installation_mode are "allowed", "blocked",
+          # "force_installed" and "normal_installed".
+          ExtensionSettings = {
+            "*".installation_mode = "blocked"; # blocks all addons except the ones specified below
+            # uBlock Origin:
+            "uBlock0@raymondhill.net" = {
+              install_url = "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi";
+              installation_mode = "force_installed";
+            };
+          };
+  
+        };
+      };
+      yt-dlp.enable = true;
+      fastfetch.enable = true;
+      hyfetch.enable = true;
+      gcc.enable = true;
+      fuzzel.enable = true;
+      waybar.enable = true;
+    };
+    home.packages = with pkgs; [
       tree
       sl
       cowsay
       gimp
       qemu
-      libvirt
       vlc
       objconv
-      yt-dlp
-      hyfetch
-      fastfetch
       wget
       cmakeMinimal
-      gcc
       gnumake
       ctags
-      texlive.combined.scheme-full
-      thunderbird
+      pavucontrol
+      imagemagick
+      (texlive.combine {
+        inherit (texlive)
+          scheme-small
+	  latexmk
+	  simplekv
+	  xstring
+	  cancel
+	  enumitem
+	  geometry
+	  commath
+	  systeme
+	  mathtools
+	  gensymb
+	  mhchem
+	  pgfplots
+          ;
+      })
+      #thunderbird
       octaveFull
       cargo
       rustc
@@ -198,9 +275,13 @@
       kdePackages.kcolorchooser
       kdePackages.kolourpaint
       kdePackages.filelight
+      kdePackages.okular
+      kdePackages.gwenview
+      blueman
       pandoc
       xournalpp
     ];
+    home.stateVersion = "25.11"; # DO NOT UPDATE!
   };
 
   # List packages installed in system profile.
@@ -208,9 +289,9 @@
   environment.systemPackages = with pkgs; [
     kdePackages.ksystemlog
     kdePackages.sddm-kcm
+    alacritty
     wayland-utils
     wl-clipboard
-    alacritty
     keychain
     dnsmasq
     zathura
@@ -218,12 +299,28 @@
     htop
     man-pages
     man-pages-posix
+    (vim-full.customize {
+	vimrcConfig.customRC = ''
+	  set number
+	  set relativenumber
+	  set ruler
+	  set autoindent
+	  set showcmd
+	  set hlsearch
+
+	  syntax on
+	  filetype on
+	'';
+    })
   ];
   
   # Copy the NixOS configuration file and link it from the resulting system
   # (/run/current-system/configuration.nix). This is useful in case you
   # accidentally delete configuration.nix.
-  system.copySystemConfiguration = true;
+  system = {
+    copySystemConfiguration = true;
+    autoUpgrade.enable = true;
+  };
 
   # This option defines the first version of NixOS you have installed on this particular machine,
   # and is used to maintain compatibility with application data (e.g. databases) created on older NixOS versions.
