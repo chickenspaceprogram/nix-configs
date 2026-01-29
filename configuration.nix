@@ -20,24 +20,34 @@ in
   boot.binfmt.emulatedSystems = [
 #    "armv7l-linux"
 #    "i386-linux"
-#    "x86_64-linux"
+    "x86_64-linux"
   ];
 
-  documentation.dev.enable = true;
+  documentation = {
+    dev.enable = true;
+    man.generateCaches = true;
+    info.enable = true;
+    nixos.includeAllModules = true;
+  };
+  fonts = {
+  	enableDefaultPackages = true;
+	packages = builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts);
+	enableGhostscriptFonts = true;
+  };
   nix = {
     settings.auto-optimise-store = true;
     gc = {
       automatic = true;
       persistent = true;
-      dates = "weekly";
+      dates = "2day";
       options = "--delete-older-than +5";
     };
   };
 
-  swapDevices = [ {
-    device = "/var/lib/swapfile";
-    size = 16*1024;
-  } ];
+  #swapDevices = [ {
+  #  device = "/var/lib/swapfile";
+  #  size = 8*1024;
+  #} ];
   
   systemd.tmpfiles.rules = [ "L+ /var/lib/qemu/firmware - - - - ${pkgs.qemu}/share/qemu/firmware" ];
 
@@ -78,6 +88,7 @@ in
   services = {
     # Enable CUPS to print documents.
     printing.enable = true;
+    flatpak.enable = true;
     # Enable sound.
     pipewire = {
       pulse.enable = true;
@@ -97,7 +108,8 @@ in
   hardware.bluetooth.enable = true;
 
   programs = {
-    niri.enable = true;
+    niri.enable = true; # for niri
+    light.enable = true; # for niri
     mtr.enable = true;
     zsh.enable = true;
 
@@ -127,46 +139,110 @@ in
     shell = pkgs.zsh;
     useDefaultShell = true;
   };
+
   home-manager.users.athena = { pkgs, ... }: {
-    xdg.mimeApps = {
+    systemd.user.sessionVariables = config.home-manager.users.athena.home.sessionVariables;
+    gtk = {
       enable = true;
-      defaultApplications = {
-        "text/html" = "firefox.desktop";
-        "x-scheme-handler/http" = "firefox.desktop";
-        "x-scheme-handler/https" = "firefox.desktop";
-        "x-scheme-handler/about" = "firefox.desktop";
-        "x-scheme-handler/unknown" = "firefox.desktop";
-	"x-scheme-handler/mailto" = "thunderbird.desktop";
-	"x-scheme-handler/mid" = "thunderbird.desktop";
-	"message/rfc822" = "thunderbird.desktop";
-	"application/pdf" = "okular.desktop";
-	"image/jpeg" = "gwenview.desktop";
-	"image/jpg" = "gwenview.desktop";
-	"image/png" = "gwenview.desktop";
-	"image/tiff" = "gwenview.desktop";
-	"image/svg+xml" = "gwenview.desktop";
-	"image/webp" = "gwenview.desktop";
-	"image/apng" = "gwenview.desktop";
-	"image/avif" = "gwenview.desktop";
-	"image/bmp" = "gwenview.desktop";
-	"image/gif" = "gwenview.desktop";
+      theme.name = "breeze-dark";
+      font = {
+        name = "Noto Sans";
+        size = 10;
+      };
+      cursorTheme = {
+        name = "breeze_cursors";
+        size = 24;
+      };
+      iconTheme.name = "breeze-dark";
+      gtk2.extraConfig = ''
+gtk-enable-animations=1
+gtk-primary-button-warps-slider=1
+gtk-toolbar-style=3
+gtk-menu-images=1
+gtk-button-images=1
+gtk-cursor-blink-time=1000
+gtk-cursor-blink=1
+gtk-sound-theme-name="ocean"
+      '';
+      gtk3.extraConfig = {
+        gtk-application-prefer-dark-theme = true;
+	gtk-button-images = true;
+        gtk-cursor-blink = true;
+        gtk-cursor-blink-time = 1000;
+        gtk-decoration-layout = "icon:minimize,maximize,close";
+        gtk-enable-animations = true;
+	gtk-modules = "colorreload-gtk-module";
+        gtk-primary-button-warps-slider = true;
+	gtk-toolbar-style = 3;
+#       gtk-sound-theme-name = ocean; doesnt work
+        gtk-xft-dpi = 196608;
+      };
+      gtk4.extraConfig = {
+        gtk-application-prefer-dark-theme = true;
+        gtk-cursor-blink = true;
+        gtk-cursor-blink-time = 1000;
+        gtk-decoration-layout = "icon:minimize,maximize,close";
+        gtk-enable-animations = true;
+        gtk-primary-button-warps-slider = true;
+#       gtk-sound-theme-name = ocean; doesnt work
+        gtk-xft-dpi = 196608;
+      };
+    };
+    qt = {
+      enable = true;
+      style.name = "breeze-dark";
+    };
+    xdg = {
+      portal = {
+        xdgOpenUsePortal = true;
+        enable = true;
+        extraPortals = [
+          pkgs.gnome-keyring
+	  pkgs.xdg-desktop-portal-gtk
+        ];
+        configPackages = [
+          pkgs.gnome-keyring
+	  pkgs.xdg-desktop-portal-gtk
+        ];
+      };
+      mimeApps = {
+        enable = true;
+        defaultApplications = {
+          "text/html" = "firefox.desktop";
+          "x-scheme-handler/http" = "firefox.desktop";
+          "x-scheme-handler/https" = "firefox.desktop";
+          "x-scheme-handler/about" = "firefox.desktop";
+          "x-scheme-handler/unknown" = "firefox.desktop";
+          "application/pdf" = "zathura.desktop";
+          "image/jpeg" = "gwenview.desktop";
+          "image/jpg" = "gwenview.desktop";
+          "image/png" = "gwenview.desktop";
+          "image/tiff" = "gwenview.desktop";
+          "image/svg+xml" = "gwenview.desktop";
+          "image/webp" = "gwenview.desktop";
+          "image/apng" = "gwenview.desktop";
+          "image/avif" = "gwenview.desktop";
+          "image/bmp" = "gwenview.desktop";
+          "image/gif" = "gwenview.desktop";
+        };
       };
     };
     programs = {
       alacritty = {
         enable = true;
         settings = {
-	  font.size = 14;
+	  font.size = 13;
 	  window.dimensions = {
 	    columns = 90;
 	    lines = 30;
 	  };
         };
       };
+      obs-studio.enable = true;
       git = {
         enable = true;
-	lfs.enable = true;
-	settings.user = {
+        lfs.enable = true;
+        settings.user = {
 	  name = "Athena Boose";
 	  email = "pestpestthechicken@yahoo.com";
 	};
@@ -181,7 +257,9 @@ in
 	  path = "${config.users.users.athena.home}/.zsh_history";
 	};
         initContent = ''
-          source ${config.users.users.athena.home}/.oh-my-zsh/themes/transgender.zsh-theme
+# trans flag
+PROMPT="%(?:%{$FG[045]%}♥ %{$FG[211]%}♥ %{$FG[015]%}♥ %{$FG[211]%}♥ %{$FG[045]%}♥ :%{$FG[045]%}♥ %{$FG[211]%}♥ %{$FG[015]%}♥ %{$FG[211]%}♥ %{$FG[045]%}♥ )"
+PROMPT+=' %{$fg[cyan]%}%c%{$reset_color%} '
         '';
       };
       firefox = {
@@ -222,10 +300,12 @@ in
       fastfetch.enable = true;
       hyfetch.enable = true;
       gcc.enable = true;
-      fuzzel.enable = true;
-      waybar.enable = true;
+      fuzzel.enable = true; # for niri
+      waybar.enable = true; # for niri
+      swaylock.enable = true; # for niri
     };
     home.packages = with pkgs; [
+      glibcInfo
       tree
       sl
       cowsay
@@ -236,28 +316,29 @@ in
       wget
       cmakeMinimal
       gnumake
+      ghostscript
       ctags
-      pavucontrol
       imagemagick
       (texlive.combine {
         inherit (texlive)
           scheme-small
-	  latexmk
-	  simplekv
-	  xstring
-	  cancel
-	  enumitem
-	  geometry
-	  commath
-	  systeme
-	  mathtools
-	  gensymb
-	  mhchem
-	  pgfplots
+          latexmk
+          simplekv
+          xstring
+          cancel
+          enumitem
+          geometry
+          commath
+          systeme
+          mathtools
+          gensymb
+          mhchem
+          pgfplots
+	  soul
           ;
       })
-      #thunderbird
       octaveFull
+
       cargo
       rustc
       aspell
@@ -265,7 +346,6 @@ in
       hunspell
       hunspellDicts.en_US
       clang-tools
-      kdiff3
       hardinfo2
       python3
       gdb
@@ -277,10 +357,18 @@ in
       kdePackages.filelight
       kdePackages.okular
       kdePackages.gwenview
-      blueman
+      kdePackages.kdenlive
       pandoc
       xournalpp
+      blueman # for niri
+      pavucontrol # for niri
+      xwayland-satellite # for niri
     ];
+    services = {
+    	mako.enable = true; # for niri
+	swayidle.enable = true; # for niri
+	udiskie.enable = true;
+    };
     home.stateVersion = "25.11"; # DO NOT UPDATE!
   };
 
@@ -295,7 +383,6 @@ in
     keychain
     dnsmasq
     zathura
-    texinfo
     htop
     man-pages
     man-pages-posix
@@ -313,7 +400,6 @@ in
 	'';
     })
   ];
-  
   # Copy the NixOS configuration file and link it from the resulting system
   # (/run/current-system/configuration.nix). This is useful in case you
   # accidentally delete configuration.nix.
