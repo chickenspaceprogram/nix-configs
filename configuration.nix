@@ -142,6 +142,10 @@ in
 
   home-manager.users.athena = { pkgs, ... }: {
     systemd.user.sessionVariables = config.home-manager.users.athena.home.sessionVariables;
+    dconf.settings."org/gnome/desktop/interface" = {
+      color-scheme = "prefer-dark";
+      gtk-theme = lib.mkForce "Breeze";
+    };
     gtk = {
       enable = true;
       theme.name = "breeze-dark";
@@ -155,37 +159,18 @@ in
       };
       iconTheme.name = "breeze-dark";
       gtk2.extraConfig = ''
-gtk-enable-animations=1
-gtk-primary-button-warps-slider=1
-gtk-toolbar-style=3
-gtk-menu-images=1
-gtk-button-images=1
 gtk-cursor-blink-time=1000
 gtk-cursor-blink=1
-gtk-sound-theme-name="ocean"
       '';
       gtk3.extraConfig = {
         gtk-application-prefer-dark-theme = true;
-	gtk-button-images = true;
         gtk-cursor-blink = true;
         gtk-cursor-blink-time = 1000;
-        gtk-decoration-layout = "icon:minimize,maximize,close";
-        gtk-enable-animations = true;
-	gtk-modules = "colorreload-gtk-module";
-        gtk-primary-button-warps-slider = true;
-	gtk-toolbar-style = 3;
-#       gtk-sound-theme-name = ocean; doesnt work
-        gtk-xft-dpi = 196608;
       };
       gtk4.extraConfig = {
         gtk-application-prefer-dark-theme = true;
         gtk-cursor-blink = true;
         gtk-cursor-blink-time = 1000;
-        gtk-decoration-layout = "icon:minimize,maximize,close";
-        gtk-enable-animations = true;
-        gtk-primary-button-warps-slider = true;
-#       gtk-sound-theme-name = ocean; doesnt work
-        gtk-xft-dpi = 196608;
       };
     };
     qt = {
