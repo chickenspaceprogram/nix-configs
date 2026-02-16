@@ -30,9 +30,20 @@ in
     nixos.includeAllModules = true;
   };
   fonts = {
-  	enableDefaultPackages = true;
-	packages = builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts);
-	enableGhostscriptFonts = true;
+    enableDefaultPackages = true;
+    packages = with pkgs; [
+      nerd-fonts.fira-code
+      nerd-fonts.jetbrains-mono
+      nerd-fonts.iosevka
+      noto-fonts
+      noto-fonts-color-emoji
+      noto-fonts-cjk-sans
+      font-awesome_6
+      fira-code
+      fira-code-symbols
+    ];
+	#packages = builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts);
+        #enableGhostscriptFonts = true;
   };
   nix = {
     settings.auto-optimise-store = true;
@@ -44,10 +55,10 @@ in
     };
   };
 
-  #swapDevices = [ {
-  #  device = "/var/lib/swapfile";
-  #  size = 8*1024;
-  #} ];
+#  swapDevices = [ {
+#    device = "/var/lib/swapfile";
+#    size = 8*1024;
+#  } ];
   
   systemd.tmpfiles.rules = [ "L+ /var/lib/qemu/firmware - - - - ${pkgs.qemu}/share/qemu/firmware" ];
 
@@ -98,9 +109,13 @@ in
     libinput.enable = true;
 
     # KDE
-    desktopManager.plasma6.enable = true;
-    displayManager.sddm.enable = true;
-    displayManager.sddm.wayland.enable = true;
+    #desktopManager.plasma6.enable = true;
+    displayManager.sddm = {
+      enable = true;
+      wayland.enable = true;
+      theme = "catppuccin-macchiato-pink";
+      package = pkgs.kdePackages.sddm;
+    };
   };
 
   virtualisation.libvirtd.enable = true;
@@ -141,7 +156,6 @@ in
   };
 
   home-manager.users.athena = { pkgs, ... }: {
-    systemd.user.sessionVariables = config.home-manager.users.athena.home.sessionVariables;
     dconf.settings."org/gnome/desktop/interface" = {
       color-scheme = "prefer-dark";
       gtk-theme = lib.mkForce "Breeze";
@@ -153,24 +167,12 @@ in
         name = "Noto Sans";
         size = 10;
       };
-      cursorTheme = {
-        name = "breeze_cursors";
-        size = 24;
-      };
       iconTheme.name = "breeze-dark";
-      gtk2.extraConfig = ''
-gtk-cursor-blink-time=1000
-gtk-cursor-blink=1
-      '';
       gtk3.extraConfig = {
         gtk-application-prefer-dark-theme = true;
-        gtk-cursor-blink = true;
-        gtk-cursor-blink-time = 1000;
       };
       gtk4.extraConfig = {
         gtk-application-prefer-dark-theme = true;
-        gtk-cursor-blink = true;
-        gtk-cursor-blink-time = 1000;
       };
     };
     qt = {
@@ -184,10 +186,12 @@ gtk-cursor-blink=1
         extraPortals = [
           pkgs.gnome-keyring
 	  pkgs.xdg-desktop-portal-gtk
+	  pkgs.xdg-desktop-portal-gnome
         ];
         configPackages = [
           pkgs.gnome-keyring
 	  pkgs.xdg-desktop-portal-gtk
+	  pkgs.xdg-desktop-portal-gnome
         ];
       };
       mimeApps = {
@@ -265,7 +269,6 @@ PROMPT+=' %{$fg[cyan]%}%c%{$reset_color%} '
           DisablePocket = true;
           DisableFirefoxAccounts = true;
           DisableAccounts = true;
-
           /* ---- EXTENSIONS ---- */
           # Check about:support for extension/add-on ID strings.
           # Valid strings for installation_mode are "allowed", "blocked",
@@ -286,18 +289,21 @@ PROMPT+=' %{$fg[cyan]%}%c%{$reset_color%} '
       hyfetch.enable = true;
       gcc.enable = true;
       fuzzel.enable = true; # for niri
-      waybar.enable = true; # for niri
       swaylock.enable = true; # for niri
+      waybar.enable = true;
+    };
+    home.pointerCursor = {
+      gtk.enable = true;
+      size = 32;
+      package = pkgs.bibata-cursors;
+      name = "Bibata-Original-Classic";
     };
     home.packages = with pkgs; [
-      glibcInfo
       tree
       sl
       cowsay
       gimp
       qemu
-      vlc
-      objconv
       wget
       cmakeMinimal
       gnumake
@@ -305,6 +311,7 @@ PROMPT+=' %{$fg[cyan]%}%c%{$reset_color%} '
       ctags
       imagemagick
       (texlive.combine {
+
         inherit (texlive)
           scheme-small
           latexmk
@@ -320,12 +327,11 @@ PROMPT+=' %{$fg[cyan]%}%c%{$reset_color%} '
           mhchem
           pgfplots
 	  soul
+	  lualatex-math
           ;
       })
       octaveFull
 
-      cargo
-      rustc
       aspell
       libreoffice-qt
       hunspell
@@ -345,14 +351,16 @@ PROMPT+=' %{$fg[cyan]%}%c%{$reset_color%} '
       kdePackages.kdenlive
       pandoc
       xournalpp
+      liburing
       blueman # for niri
       pavucontrol # for niri
       xwayland-satellite # for niri
+      inkscape-with-extensions
     ];
     services = {
-    	mako.enable = true; # for niri
-	swayidle.enable = true; # for niri
-	udiskie.enable = true;
+      mako.enable = true; # for niri
+      swayidle.enable = true; # for niri
+      udiskie.enable = true;
     };
     home.stateVersion = "25.11"; # DO NOT UPDATE!
   };
@@ -361,7 +369,12 @@ PROMPT+=' %{$fg[cyan]%}%c%{$reset_color%} '
   # You can use https://search.nixos.org/ to find more packages (and options).
   environment.systemPackages = with pkgs; [
     kdePackages.ksystemlog
-    kdePackages.sddm-kcm
+#    kdePackages.sddm-kcm
+    (pkgs.catppuccin-sddm.override {
+      flavor = "macchiato";
+      accent = "pink";
+      fontSize = "30";
+    })
     alacritty
     wayland-utils
     wl-clipboard
@@ -414,3 +427,4 @@ PROMPT+=' %{$fg[cyan]%}%c%{$reset_color%} '
 
 }
 
+# Edit this configuration file to define what should be installed on
