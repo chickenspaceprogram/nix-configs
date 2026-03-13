@@ -2,11 +2,7 @@
 # your system. Help is available in the configuration.nix(5) man page, on
 # https://search.nixos.org/options and in the NixOS manual (`nixos-help`).
 
-{ config, lib, pkgs, ... }:
-
-let
-  home-manager = builtins.fetchTarball https://github.com/nix-community/home-manager/archive/release-25.11.tar.gz;
-in
+{ config, lib, pkgs, nixpkgs, home-manager, ... }:
 {
   imports = [ # Include the results of the hardware scan.
     ./hardware-configuration.nix
@@ -22,6 +18,7 @@ in
 #    "i386-linux"
     "x86_64-linux"
   ];
+
 
   documentation = {
     dev.enable = true;
@@ -42,11 +39,14 @@ in
       fira-code
       fira-code-symbols
     ];
-	#packages = builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts);
+        #packages = builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts);
         #enableGhostscriptFonts = true;
   };
   nix = {
-    settings.auto-optimise-store = true;
+    settings = {
+      auto-optimise-store = true;
+      experimental-features = [ "nix-command" "flakes" ];
+    };
     gc = {
       automatic = true;
       persistent = true;
@@ -55,10 +55,10 @@ in
     };
   };
 
-#  swapDevices = [ {
-#    device = "/var/lib/swapfile";
-#    size = 8*1024;
-#  } ];
+  swapDevices = [ {
+    device = "/var/lib/swapfile";
+    size = 8*1024;
+  } ];
   
   systemd.tmpfiles.rules = [ "L+ /var/lib/qemu/firmware - - - - ${pkgs.qemu}/share/qemu/firmware" ];
 
@@ -99,7 +99,7 @@ in
   services = {
     # Enable CUPS to print documents.
     printing.enable = true;
-    flatpak.enable = true;
+    #flatpak.enable = true;
     # Enable sound.
     pipewire = {
       pulse.enable = true;
@@ -123,8 +123,8 @@ in
   hardware.bluetooth.enable = true;
 
   programs = {
+    thunderbird.enable = true;
     niri.enable = true; # for niri
-    light.enable = true; # for niri
     mtr.enable = true;
     zsh.enable = true;
 
@@ -153,16 +153,119 @@ in
     ];
     shell = pkgs.zsh;
     useDefaultShell = true;
+    packages = with pkgs; [
+      tree
+      sl
+      cowsay
+      gimp
+      qemu
+      wget
+      cmakeMinimal
+      gnumake
+      ghostscript
+      ctags
+      imagemagick
+      octaveFull
+
+      cargo
+      rustc
+      aspell
+      aspellDicts.en
+      aspellDicts.en-computers
+
+      libreoffice-qt
+      hunspell
+      hunspellDicts.en_US
+      clang-tools
+      hardinfo2
+      python3
+      gdb
+      valgrind
+      bc
+      kdePackages.kclock
+      kdePackages.kcolorchooser
+      kdePackages.kolourpaint
+      kdePackages.filelight
+      kdePackages.okular
+      kdePackages.gwenview
+      kdePackages.kdenlive
+      kdePackages.konversation
+      kdePackages.korganizer
+      kdePackages.akonadi-mime
+      kdePackages.akonadi
+      kdePackages.kate
+      kdePackages.qtsvg
+      kdePackages.dolphin
+
+
+      haskell.compiler.ghcHEAD
+      pandoc
+      xournalpp
+      liburing
+      blueman # for niri
+      pavucontrol # for niri
+      xwayland-satellite # for niri
+      inkscape-with-extensions
+      lynx
+      w3m
+      elinks
+      zip
+      unzip
+      jre_minimal
+      swaybg
+      brightnessctl
+      (texlive.combine {
+
+        inherit (texlive)
+          scheme-small
+          latexmk
+          simplekv
+          xstring
+          cancel
+          enumitem
+          geometry
+          commath
+          systeme
+          mathtools
+          gensymb
+          mhchem
+          pgfplots
+          soul
+          lualatex-math
+          ;
+      })
+    ];
   };
 
   home-manager.users.athena = { pkgs, ... }: {
+    accounts.email.accounts = {
+      pestpest = {
+        enable = true;
+        address = "pestpestthechicken@gmail.com";
+        realName = "Athena Boose";
+        primary = true;
+      };
+      chickenspaceprogram = {
+        enable = true;
+        address = "chickenspaceprogram@gmail.com";
+        realName = "Athena Boose";
+      };
+      athena = {
+        enable = true;
+        address = "athena.boose@gmail.com";
+        realName = "Athena Boose";
+      };
+    };
     dconf.settings."org/gnome/desktop/interface" = {
       color-scheme = "prefer-dark";
-      gtk-theme = lib.mkForce "Breeze";
+      gtk-theme = "Breeze-Dark";
     };
     gtk = {
       enable = true;
-      theme.name = "breeze-dark";
+      theme = {
+        name = "Breeze-Dark";
+        package = pkgs.kdePackages.breeze-gtk;
+      };
       font = {
         name = "Noto Sans";
         size = 10;
@@ -177,7 +280,10 @@ in
     };
     qt = {
       enable = true;
-      style.name = "breeze-dark";
+      platformTheme.name = "kde";
+      style = {
+        name = "breeze-dark";
+      };
     };
     xdg = {
       portal = {
@@ -185,13 +291,13 @@ in
         enable = true;
         extraPortals = [
           pkgs.gnome-keyring
-	  pkgs.xdg-desktop-portal-gtk
-	  pkgs.xdg-desktop-portal-gnome
+          pkgs.xdg-desktop-portal-gtk
+          pkgs.xdg-desktop-portal-gnome
         ];
         configPackages = [
           pkgs.gnome-keyring
-	  pkgs.xdg-desktop-portal-gtk
-	  pkgs.xdg-desktop-portal-gnome
+          pkgs.xdg-desktop-portal-gtk
+          pkgs.xdg-desktop-portal-gnome
         ];
       };
       mimeApps = {
@@ -203,6 +309,7 @@ in
           "x-scheme-handler/about" = "firefox.desktop";
           "x-scheme-handler/unknown" = "firefox.desktop";
           "application/pdf" = "zathura.desktop";
+          "application/epub" = "zathura.desktop";
           "image/jpeg" = "gwenview.desktop";
           "image/jpg" = "gwenview.desktop";
           "image/png" = "gwenview.desktop";
@@ -220,11 +327,11 @@ in
       alacritty = {
         enable = true;
         settings = {
-	  font.size = 13;
-	  window.dimensions = {
-	    columns = 90;
-	    lines = 30;
-	  };
+          font.size = 10.5;
+          window.dimensions = {
+            columns = 90;
+            lines = 30;
+          };
         };
       };
       obs-studio.enable = true;
@@ -232,19 +339,19 @@ in
         enable = true;
         lfs.enable = true;
         settings.user = {
-	  name = "Athena Boose";
-	  email = "pestpestthechicken@yahoo.com";
-	};
+          name = "Athena Boose";
+          email = "pestpestthechicken@yahoo.com";
+        };
       };
       zsh = {
         enable = true;
         enableCompletion = true;
         syntaxHighlighting.enable = true;
         oh-my-zsh.enable = true;
-	history = {
-	  size = 10000;
-	  path = "${config.users.users.athena.home}/.zsh_history";
-	};
+        history = {
+          size = 10000;
+          path = "${config.users.users.athena.home}/.zsh_history";
+        };
         initContent = ''
 # trans flag
 PROMPT="%(?:%{$FG[045]%}♥ %{$FG[211]%}♥ %{$FG[015]%}♥ %{$FG[211]%}♥ %{$FG[045]%}♥ :%{$FG[045]%}♥ %{$FG[211]%}♥ %{$FG[015]%}♥ %{$FG[211]%}♥ %{$FG[045]%}♥ )"
@@ -290,73 +397,91 @@ PROMPT+=' %{$fg[cyan]%}%c%{$reset_color%} '
       gcc.enable = true;
       fuzzel.enable = true; # for niri
       swaylock.enable = true; # for niri
-      waybar.enable = true;
+      waybar = {
+        enable = true;
+	settings = {
+          mainBar = {
+            # "layer": "top", # Waybar at top layer
+            # "position": "bottom", # Waybar position (top|bottom|left|right)
+            height = 30; # Waybar height (to be removed for auto height)
+            # "width": 1280, # Waybar width
+            spacing = 4; # Gaps between modules (4px)
+            # Choose the order of the modules
+            modules-right = [
+              "pulseaudio"
+              "network"
+              "battery"
+              "battery#bat2"
+              "clock"
+            ];
+            clock = {
+              tooltip-format = "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
+              format-alt = "{:%Y-%m-%d}";
+            };
+            battery = {
+              states = {
+                # "good": 95,
+                warning = 30;
+                critical = 15;
+              };
+              format = "{capacity}% {icon}";
+              format-full = "{capacity}% {icon}";
+              format-charging = "{capacity}% ";
+              format-plugged = "{capacity}% ";
+              format-alt = "{time} {icon}";
+              # "format-good": "", # An empty format will hide the module
+              # "format-full": "",
+              format-icons = ["" "" "" "" ""];
+            };
+            "battery#bat2" = {
+              bat = "BAT2";
+            };
+            network = {
+              # "interface": "wlp2*", # (Optional) To force the use of this interface
+              format-wifi = "{essid} ({signalStrength}%) ";
+              format-ethernet = "{ipaddr}/{cidr} ";
+              tooltip-format = "{ifname} via {gwaddr} ";
+              format-linked = "{ifname} (No IP) ";
+              format-disconnected = "Disconnected ⚠";
+              format-alt = "{ifname}: {ipaddr}/{cidr}";
+            };
+            pulseaudio = {
+              # "scroll-step": 1, # %, can be a float
+              format = "{volume}% {icon} {format_source}";
+              format-bluetooth = "{volume}% {icon} {format_source}";
+              format-bluetooth-muted = " {icon} {format_source}";
+              format-muted = " {format_source}";
+              format-source = "{volume}% ";
+              format-source-muted = "";
+              format-icons = {
+                headphone = "";
+                hands-free = "";
+                headset = "";
+                phone = "";
+                portable = "";
+                car = "";
+                default =["" "" ""];
+              };
+              on-click = "pavucontrol";
+            };
+          };
+        };
+      };
     };
-    home.pointerCursor = {
-      gtk.enable = true;
-      size = 32;
-      package = pkgs.bibata-cursors;
-      name = "Bibata-Original-Classic";
+    home = {
+      pointerCursor = {
+        gtk.enable = true;
+        size = 32;
+        package = pkgs.bibata-cursors;
+        name = "Bibata-Original-Classic";
+      };
+      file.".config/kdeglobals" = {
+        text = ''
+          ${builtins.readFile "${pkgs.kdePackages.breeze}/share/color-schemes/BreezeDark.colors"}
+        '';
+      };
     };
-    home.packages = with pkgs; [
-      tree
-      sl
-      cowsay
-      gimp
-      qemu
-      wget
-      cmakeMinimal
-      gnumake
-      ghostscript
-      ctags
-      imagemagick
-      (texlive.combine {
-
-        inherit (texlive)
-          scheme-small
-          latexmk
-          simplekv
-          xstring
-          cancel
-          enumitem
-          geometry
-          commath
-          systeme
-          mathtools
-          gensymb
-          mhchem
-          pgfplots
-	  soul
-	  lualatex-math
-          ;
-      })
-      octaveFull
-
-      aspell
-      libreoffice-qt
-      hunspell
-      hunspellDicts.en_US
-      clang-tools
-      hardinfo2
-      python3
-      gdb
-      valgrind
-      bc
-      kdePackages.kclock
-      kdePackages.kcolorchooser
-      kdePackages.kolourpaint
-      kdePackages.filelight
-      kdePackages.okular
-      kdePackages.gwenview
-      kdePackages.kdenlive
-      pandoc
-      xournalpp
-      liburing
-      blueman # for niri
-      pavucontrol # for niri
-      xwayland-satellite # for niri
-      inkscape-with-extensions
-    ];
+    #home.packages = with pkgs; [];
     services = {
       mako.enable = true; # for niri
       swayidle.enable = true; # for niri
@@ -370,6 +495,10 @@ PROMPT+=' %{$fg[cyan]%}%c%{$reset_color%} '
   environment.systemPackages = with pkgs; [
     kdePackages.ksystemlog
 #    kdePackages.sddm-kcm
+    kdePackages.breeze
+    kdePackages.breeze-gtk
+    kdePackages.breeze-icons
+    kdePackages.breeze.qt5
     (pkgs.catppuccin-sddm.override {
       flavor = "macchiato";
       accent = "pink";
@@ -385,24 +514,27 @@ PROMPT+=' %{$fg[cyan]%}%c%{$reset_color%} '
     man-pages
     man-pages-posix
     (vim-full.customize {
-	vimrcConfig.customRC = ''
-	  set number
-	  set relativenumber
-	  set ruler
-	  set autoindent
-	  set showcmd
-	  set hlsearch
+        vimrcConfig.customRC = ''
+          set number
+          set relativenumber
+          set ruler
+          set autoindent
+          set showcmd
+          set hlsearch
 
-	  syntax on
-	  filetype on
-	'';
+          syntax on
+          filetype on
+        '';
     })
   ];
+  security.sudo.extraConfig = ''
+    Defaults pwfeedback
+  '';
   # Copy the NixOS configuration file and link it from the resulting system
   # (/run/current-system/configuration.nix). This is useful in case you
   # accidentally delete configuration.nix.
   system = {
-    copySystemConfiguration = true;
+    #copySystemConfiguration = true; // no with flakes ;-;
     autoUpgrade.enable = true;
   };
 
